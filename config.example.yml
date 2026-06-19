@@ -1,8 +1,9 @@
 # Path to your Obsidian vault root folder
-vault_path: C:\Users\YourName\Documents\MyVault
+# Use forward slashes (/) even on Windows — backslashes cause YAML parsing errors
+vault_path: C:/Users/YourName/Documents/MyVault
 
 # Your iNaturalist username (from your profile URL: inaturalist.org/people/yourname)
 inaturalist_username: yourname
 
 # Optional: where to look for eBird export ZIPs (defaults to ~/Downloads)
-# downloads_path: C:\Users\YourName\Downloads
+# downloads_path: C:/Users/YourName/Downloads

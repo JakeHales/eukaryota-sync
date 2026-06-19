@@ -62,11 +62,11 @@ pip install -r requirements.txt
 Copy `config.example.yml` to `config.yml` and open it in any text editor. Fill in two fields:
 
 ```yaml
-vault_path: C:\Users\YourName\Documents\MyVault
+vault_path: C:/Users/YourName/Documents/MyVault
 inaturalist_username: yourname
 ```
 
-- `vault_path` — the root folder of your Obsidian vault
+- `vault_path` — the root folder of your Obsidian vault. Use forward slashes (`/`) even on Windows — backslashes cause YAML parsing errors.
 - `inaturalist_username` — your username from `inaturalist.org/people/yourname`
 
 That's it.
