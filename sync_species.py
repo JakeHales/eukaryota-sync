@@ -560,9 +560,14 @@ def run_ebird(cfg, state):
         sci_name = row.get("Scientific Name", "").strip()
         if not sci_name:
             continue
-        # Strip parenthetical annotations: "Columba livia (Feral Pigeon)" → "Columba livia"
+        # Strip parenthetical and square-bracket group annotations
         sci_name = re.sub(r'\s*\(.*?\)', '', sci_name).strip()
+        sci_name = re.sub(r'\s*\[.*?\]', '', sci_name).strip()
         parts = sci_name.split()
+        if len(parts) == 3 and '/' in parts[2]:
+            # Slash subspecies group e.g. "collybita/abietinus" — resolve to parent species
+            sci_name = f"{parts[0]} {parts[1]}"
+            parts = sci_name.split()
         if len(parts) == 3:
             t = taxonomy_by_subspecies(sci_name)
             if not taxonomy_complete(t):
