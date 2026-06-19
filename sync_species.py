@@ -3,6 +3,7 @@
 
 import csv
 import json
+import os
 import re
 import sys
 import time
@@ -408,9 +409,20 @@ def run_inat(cfg, state):
 # ── eBird sync ───────────────────────────────────────────────────────────────
 
 def find_ebird_zip(cfg):
-    downloads = Path(cfg.get("downloads_path", Path.home() / "Downloads"))
-    zips = sorted(downloads.glob("ebird_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
-    return zips[0] if zips else None
+    if "downloads_path" in cfg and cfg["downloads_path"]:
+        candidates = [Path(cfg["downloads_path"])]
+    else:
+        # Try multiple common locations — Path.home() can resolve unexpectedly
+        # on some Windows setups
+        candidates = [Path.home() / "Downloads"]
+        userprofile = os.environ.get("USERPROFILE")
+        if userprofile:
+            candidates.append(Path(userprofile) / "Downloads")
+    for downloads in candidates:
+        zips = sorted(downloads.glob("ebird_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if zips:
+            return zips[0]
+    return None
 
 
 def run_ebird(cfg, state):
