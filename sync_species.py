@@ -23,8 +23,22 @@ STATE_PATH = ROOT / "sync_state.json"
 
 
 def load_config():
+    # Preprocess path lines before YAML parsing: replace backslashes with
+    # forward slashes so YAML doesn't interpret \P, \N etc. as escape sequences.
+    path_keys = {"vault_path", "downloads_path"}
     with open(CONFIG_PATH, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        lines = f.readlines()
+    fixed = []
+    for line in lines:
+        for key in path_keys:
+            if re.match(rf'^\s*{key}\s*:', line):
+                colon = line.index(":") + 1
+                val = line[colon:].strip().strip("\"'")
+                val = val.replace("\\", "/")
+                line = line[:colon] + f" {val}\n"
+                break
+        fixed.append(line)
+    return yaml.safe_load("".join(fixed))
 
 
 def load_state():
