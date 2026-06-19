@@ -46,7 +46,12 @@ Download or clone this repository to somewhere on your computer, e.g. `C:\Tools\
 
 **2. Install dependencies**
 
-Open a terminal in the folder and run:
+Open a terminal in the folder:
+- **Windows 11**: right-click the folder in Explorer → **Open in Terminal**
+- **Windows 10**: hold Shift and right-click the folder → **Open PowerShell window here**
+- **Or**: open the folder in Explorer, click the address bar at the top, type `cmd`, and press Enter
+
+Then run:
 
 ```
 pip install -r requirements.txt
@@ -88,7 +93,7 @@ Then open Obsidian, go to **Settings → Community Plugins**, and enable **Custo
 
 ## Usage
 
-Open a terminal in the tool folder and run one of the following commands.
+Open a terminal in the tool folder (same as Step 2 above) and run one of the following commands.
 
 ### Sync iNaturalist observations
 
