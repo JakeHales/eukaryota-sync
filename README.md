@@ -79,6 +79,8 @@ Copy the `vault_setup/` folder contents into your Obsidian vault root:
 
 ```
 your-vault/
+├── Eukaryota/
+│   └── Eukaryota.base           ← copied from vault_setup
 └── .obsidian/
     ├── community-plugins.json   ← copied from vault_setup
     └── plugins/

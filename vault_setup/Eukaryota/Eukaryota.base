@@ -1,0 +1,127 @@
+filters:
+  or:
+    - file.inFolder("Eukaryota")
+formulas:
+  cover_image: if(cover, cover, file.embeds.filter(value.asFile().ext.containsAny("jpg", "png", "webp", "gif", "svg"))[0])
+views:
+  - type: cards
+    name: Gallery
+    filters:
+      and:
+        - theme == "nature"
+    order:
+      - common name
+      - file.name
+      - family
+      - seen
+    sort:
+      - property: kingdom
+        direction: ASC
+      - property: file.name
+        direction: ASC
+    image: formula.cover_image
+  - type: table
+    name: All Species
+    filters:
+      and:
+        - theme == "nature"
+    order:
+      - common name
+      - file.name
+      - phylum
+      - class
+      - order
+      - family
+      - seen
+    sort:
+      - property: kingdom
+        direction: ASC
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Animalia
+    filters:
+      and:
+        - kingdom == "Animalia"
+        - theme == "nature"
+    order:
+      - common name
+      - file.name
+      - phylum
+      - class
+      - order
+      - family
+      - seen
+    sort:
+      - property: phylum
+        direction: ASC
+      - property: file.name
+        direction: ASC
+  - type: cards
+    name: Plantae
+    filters:
+      and:
+        - kingdom == "Plantae"
+        - theme == "nature"
+    order:
+      - common name
+      - file.name
+      - family
+      - seen
+    sort:
+      - property: file.name
+        direction: ASC
+    image: formula.cover_image
+  - type: cards
+    name: Fungi
+    filters:
+      and:
+        - kingdom == "Fungi"
+        - theme == "nature"
+    order:
+      - file.name
+      - common name
+      - seen
+    sort:
+      - property: file.name
+        direction: ASC
+    image: formula.cover_image
+  - type: cards
+    name: Families
+    filters:
+      and:
+        - theme == "family"
+    sort:
+      - property: kingdom
+        direction: ASC
+      - property: file.name
+        direction: ASC
+    image: formula.cover_image
+  - type: cards
+    name: Bird Families
+    filters:
+      and:
+        - theme == "family"
+        - class == "Aves"
+    image: formula.cover_image
+  - type: cards
+    name: Plant Families
+    filters:
+      and:
+        - theme == "family"
+        - kingdom == "Plantae"
+    image: formula.cover_image
+  - type: cards
+    name: Insect Families
+    filters:
+      and:
+        - theme == "family"
+        - class == "Insecta"
+    image: formula.cover_image
+  - type: cards
+    name: Mammal Families
+    filters:
+      and:
+        - theme == "family"
+        - class == "Mammalia"
+    image: formula.cover_image
