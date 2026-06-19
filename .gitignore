@@ -1,0 +1,18 @@
+# Personal config — copy from config.example.yml
+config.yml
+
+# Sync state — generated on first run
+sync_state.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
