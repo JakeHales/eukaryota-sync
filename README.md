@@ -31,7 +31,7 @@ Intermediate ranks (family, order, class, etc.) each get their own stub note aut
 
 ## Prerequisites
 
-- [Python 3.8+](https://www.python.org/downloads/)
+- [Python 3.8+](https://www.python.org/downloads/) — during installation, tick **"Add Python to PATH"** before clicking Install
 - An [iNaturalist](https://www.inaturalist.org) account (free)
 - An [eBird](https://ebird.org) account if you want to sync bird checklists (free)
 - An Obsidian vault (the folder can be empty to start)
@@ -54,7 +54,7 @@ Open a terminal in the folder:
 Then run:
 
 ```
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 **3. Create your config file**
