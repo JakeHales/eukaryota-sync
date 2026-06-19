@@ -73,6 +73,17 @@ def species_path(cfg, t):
     )
 
 
+def subspecies_path(cfg, t, subspecies):
+    species_name = f"{t['genus']} {t['species']}"
+    return (
+        eukaryota(cfg)
+        / t["kingdom"] / t["phylum"] / t["class"]
+        / t["order"] / t["family"]
+        / species_name
+        / f"{species_name} {subspecies}.md"
+    )
+
+
 RANKS = ["kingdom", "phylum", "class", "order", "family"]
 
 
@@ -170,6 +181,27 @@ def taxonomy_by_name(name):
     return None
 
 
+def taxonomy_by_subspecies(name):
+    """Look up a trinomial on iNat; return taxonomy dict with 'subspecies' key added."""
+    parts = name.split()
+    if len(parts) != 3:
+        return None
+    data = inat_get("taxa", {"q": name, "rank": "subspecies", "per_page": 10})
+    for result in data.get("results", []):
+        if result["name"].lower() == name.lower():
+            t = taxonomy_from_id(result["id"])
+            if t:
+                t["genus"] = parts[0]
+                t["species"] = parts[1]
+                t["subspecies"] = parts[2]
+                return t
+    # iNat doesn't have this subspecies — fall back to parent species
+    t = taxonomy_by_name(f"{parts[0]} {parts[1]}")
+    if t:
+        t["subspecies"] = parts[2]
+    return t
+
+
 def taxonomy_complete(t):
     return t and all(t.get(r) for r in RANKS)
 
@@ -228,6 +260,23 @@ def fetch_species_image(cfg, t):
         save_image(url, dest)
     if not dest.exists():
         print(f"  No image for {t['genus']} {t['species']} — add {filename} to images/ manually")
+    return filename
+
+
+def fetch_subspecies_image(cfg, t, subspecies):
+    full_name = f"{t['genus']} {t['species']} {subspecies}"
+    filename = f"{t['genus']}_{t['species']}_{subspecies}.jpg"
+    dest = images_dir(cfg) / filename
+    if dest.exists():
+        return filename
+    url = (wiki_image_url(full_name)
+           or inat_taxon_image(full_name)
+           or wiki_image_url(f"{t['genus']} {t['species']}")
+           or t.get("default_photo", ""))
+    if url:
+        save_image(url, dest)
+    if not dest.exists():
+        print(f"  No image for {full_name} — add {filename} to images/ manually")
     return filename
 
 
@@ -296,6 +345,28 @@ def species_content(t, img, seen, first_location=None):
     return f"{to_yaml_block(fields)}\n\n{body}\n"
 
 
+def subspecies_content(t, subspecies, img, seen, first_location=None):
+    species_name = f"{t['genus']} {t['species']}"
+    fields = {
+        "created": NOW, "updated": NOW,
+        "class": t["class"],
+        "IUCN red list": t["iucn"] or None,
+        "tags": ["📝/🌱"],
+        "kingdom": t["kingdom"], "phylum": t["phylum"],
+        "order": t["order"], "family": t["family"],
+        "genus": t["genus"], "species": t["species"],
+        "subspecies": subspecies,
+        "common name": t["common_name"],
+        "theme": "subspecies", "rating": None,
+        "seen": True if seen else None,
+    }
+    breadcrumb = f"[[{species_name}]] > {species_name} {subspecies}"
+    body = f"{breadcrumb}\n\n# Info\n\n![[{img}]]\n\n# Locations seen"
+    if first_location:
+        body += f"\n{first_location}"
+    return f"{to_yaml_block(fields)}\n\n{body}\n"
+
+
 def rank_content(t, rank, img):
     rank_idx = RANKS.index(rank)
     crumbs = ["[[Eukaryota]]"] + [f"[[{t[r]}]]" for r in RANKS[: rank_idx + 1]]
@@ -351,6 +422,44 @@ def ensure_stubs(cfg, t):
             img = fetch_rank_image(cfg, t[rank])
             write_note(p, rank_content(t, rank, img))
             print(f"  Stub: {t[rank]}")
+
+
+def ensure_subspecies_link(species_note_path, subspecies_full_name):
+    if not species_note_path.exists():
+        return
+    text = species_note_path.read_text(encoding="utf-8")
+    link = f"[[{subspecies_full_name}]]"
+    if link in text:
+        return
+    if "# Subspecies" in text:
+        text = text.rstrip() + f"\n{link}\n"
+    else:
+        text = text.rstrip() + f"\n\n# Subspecies\n{link}\n"
+    species_note_path.write_text(text, encoding="utf-8")
+
+
+def create_or_sync_subspecies(cfg, t, entry, seen=True):
+    subspecies = t["subspecies"]
+    sp = subspecies_path(cfg, t, subspecies)
+    parent = species_path(cfg, t)
+    full_name = f"{t['genus']} {t['species']} {subspecies}"
+
+    if not parent.exists():
+        ensure_stubs(cfg, t)
+        img = fetch_species_image(cfg, t)
+        write_note(parent, species_content(t, img, seen=False))
+        print(f"  + {t['genus']} {t['species']} (parent species)")
+
+    if not sp.exists():
+        img = fetch_subspecies_image(cfg, t, subspecies)
+        write_note(sp, subspecies_content(t, subspecies, img, seen, first_location=entry))
+        ensure_subspecies_link(parent, full_name)
+        return "created"
+
+    if entry:
+        append_sighting(sp, entry)
+    ensure_subspecies_link(parent, full_name)
+    return "synced"
 
 
 def create_or_sync(cfg, t, entry, seen=True):
@@ -453,10 +562,19 @@ def run_ebird(cfg, state):
             continue
         # Strip parenthetical annotations: "Columba livia (Feral Pigeon)" → "Columba livia"
         sci_name = re.sub(r'\s*\(.*?\)', '', sci_name).strip()
-        # Strip subspecies epithet from trinomials: "Elanus caeruleus caeruleus" → "Elanus caeruleus"
         parts = sci_name.split()
         if len(parts) == 3:
-            sci_name = f"{parts[0]} {parts[1]}"
+            t = taxonomy_by_subspecies(sci_name)
+            if not taxonomy_complete(t):
+                print(f"  Could not resolve: {sci_name}")
+                counts["skipped"] += 1
+                continue
+            result = create_or_sync_subspecies(cfg, t, entry, seen=True)
+            counts[result] += 1
+            if result == "created":
+                print(f"  + {sci_name}")
+            time.sleep(0.3)
+            continue
         t = taxonomy_by_name(sci_name)
         if not taxonomy_complete(t):
             if not t:
