@@ -451,6 +451,12 @@ def run_ebird(cfg, state):
         sci_name = row.get("Scientific Name", "").strip()
         if not sci_name:
             continue
+        # Strip parenthetical annotations: "Columba livia (Feral Pigeon)" → "Columba livia"
+        sci_name = re.sub(r'\s*\(.*?\)', '', sci_name).strip()
+        # Strip subspecies epithet from trinomials: "Elanus caeruleus caeruleus" → "Elanus caeruleus"
+        parts = sci_name.split()
+        if len(parts) == 3:
+            sci_name = f"{parts[0]} {parts[1]}"
         t = taxonomy_by_name(sci_name)
         if not taxonomy_complete(t):
             if not t:
